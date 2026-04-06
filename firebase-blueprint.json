@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "CivilizationState": {
+      "title": "Civilization State",
+      "description": "The current state of a user's civilization.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "energy": { "type": "number" },
+            "food": { "type": "number" },
+            "materials": { "type": "number" },
+            "knowledge": { "type": "number" }
+          },
+          "required": ["energy", "food", "materials", "knowledge"]
+        },
+        "population": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "number" },
+            "growthRate": { "type": "number" },
+            "happiness": { "type": "number" }
+          },
+          "required": ["total", "growthRate", "happiness"]
+        },
+        "research": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "cost": { "type": "number" },
+              "progress": { "type": "number" },
+              "isCompleted": { "type": "boolean" },
+              "category": { "type": "string", "enum": ["energy", "food", "materials", "knowledge", "military"] }
+            },
+            "required": ["id", "name", "cost", "progress", "isCompleted", "category"]
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "timestamp": { "type": "number" },
+              "message": { "type": "string" },
+              "type": { "type": "string", "enum": ["info", "warning", "error", "success"] }
+            },
+            "required": ["id", "timestamp", "message", "type"]
+          }
+        },
+        "careLogs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "timestamp": { "type": "number" },
+              "category": { "type": "string", "enum": ["health", "education", "social", "environment"] },
+              "value": { "type": "number" },
+              "description": { "type": "string" }
+            },
+            "required": ["id", "timestamp", "category", "value", "description"]
+          }
+        },
+        "lastUpdate": { "type": "number" }
+      },
+      "required": ["uid", "resources", "population", "research", "events", "careLogs", "lastUpdate"]
+    }
+  },
+  "firestore": {
+    "civilizations/{userId}": {
+      "schema": "CivilizationState",
+      "description": "User-specific civilization data."
+    }
+  }
+}

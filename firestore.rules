@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: civilizations
+    // Document ID: userId (UID)
+    // Fields:
+    //   - uid: string (required, immutable) - Owner UID
+    //   - resources: map (required) - energy, food, materials, knowledge
+    //   - population: map (required) - total, growthRate, happiness
+    //   - research: list (required) - array of research objects
+    //   - events: list (required) - array of event objects
+    //   - lastUpdate: number (required) - timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "tamatixyan@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidCivilization(data) {
+      return hasRequiredFields(['uid', 'resources', 'population', 'research', 'events', 'careLogs', 'lastUpdate']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.resources is map &&
+             data.resources.energy is number &&
+             data.resources.food is number &&
+             data.resources.materials is number &&
+             data.resources.knowledge is number &&
+             data.population is map &&
+             data.population.total is number &&
+             data.population.growthRate is number &&
+             data.population.happiness is number &&
+             data.research is list &&
+             data.events is list &&
+             data.careLogs is list &&
+             data.lastUpdate is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /civilizations/{userId} {
+      // 公開設定: 認証なしで誰でも読み取り可能
+      allow read: if true;
+      
+      allow create: if (isOwner(userId) || isAdmin()) && 
+                      isValidCivilization(request.resource.data) &&
+                      request.resource.data.uid == userId;
+                      
+      allow update: if (isOwner(userId) || isAdmin()) && 
+                      isValidCivilization(request.resource.data) &&
+                      areImmutableFieldsUnchanged(['uid']) &&
+                      request.resource.data.uid == resource.data.uid;
+                      
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

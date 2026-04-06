@@ -1,0 +1,5 @@
+{
+  "name": "Civilization OS",
+  "description": "A futuristic civilization management dashboard with real-time resource tracking, population statistics, and technology research progress, powered by Firebase.",
+  "requestFramePermissions": []
+}
